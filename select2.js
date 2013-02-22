@@ -1816,6 +1816,10 @@ the specific language governing permissions and limitations under the Apache Lic
 
         // single
         getPlaceholder: function() {
+            
+            // Always try and return if the settings say so
+            if (this.opts.alwaysShowPlaceholder === true) return this.parent.getPlaceholder.apply(this, arguments);
+            
             // if a placeholder is specified on a single select without the first empty option ignore it
             if (this.select) {
                 if (this.select.find("option").first().text() !== "") {
@@ -1830,7 +1834,7 @@ the specific language governing permissions and limitations under the Apache Lic
         setPlaceholder: function () {
             var placeholder = this.getPlaceholder();
 
-            if (this.opts.element.val() === "" && placeholder !== undefined) {
+            if ((this.opts.element.val() === "" || this.opts.alwaysShowPlaceholder === true) && placeholder !== undefined) {
 
                 // check for a first blank option if attached to a select
                 if (this.select && this.select.find("option:first").text() !== "") return;
@@ -2074,7 +2078,7 @@ the specific language governing permissions and limitations under the Apache Lic
                         selected = selection.find(".select2-search-choice-focus");
                     if (selected.length > 0) {
                         this.unselect(selected.first());
-                        this.search.width(10);
+                        this.closeSearch();
                         killEvent(e);
                         return;
                     }
@@ -2205,12 +2209,13 @@ the specific language governing permissions and limitations under the Apache Lic
         clearSearch: function () {
             var placeholder = this.getPlaceholder();
 
-            if (placeholder !== undefined  && this.getVal().length === 0 && this.search.hasClass("select2-focused") === false) {
+            if (placeholder !== undefined  && (this.opts.alwaysShowPlaceholder === true || this.getVal().length === 0) && this.search.hasClass("select2-focused") === false) {
                 this.search.val(placeholder).addClass("select2-default");
                 // stretch the search box to full width of the container so as much of the placeholder is visible as possible
                 this.resizeSearch();
             } else {
-                this.search.val("").width(10);
+                this.search.val("");
+                this.closeSearch();
             }
         },
 
@@ -2218,6 +2223,12 @@ the specific language governing permissions and limitations under the Apache Lic
         clearPlaceholder: function () {
             if (this.search.hasClass("select2-default")) {
                 this.search.val("").removeClass("select2-default");
+            }
+        },
+        
+        closeSearch: function () {
+            if (this.opts.alwaysShowPlaceholder !== true) {
+                this.search.width(10);
             }
         },
 
@@ -2292,10 +2303,10 @@ the specific language governing permissions and limitations under the Apache Lic
 
             if (this.opts.closeOnSelect) {
                 this.close();
-                this.search.width(10);
+                this.closeSearch();
             } else {
                 if (this.countSelectableResults()>0) {
-                    this.search.width(10);
+                    this.closeSearch();
                     this.resizeSearch();
                     if (this.val().length >= this.getMaximumSelectionSize()) {
                         // if we reached max selection size repaint the results so choices
@@ -2306,7 +2317,7 @@ the specific language governing permissions and limitations under the Apache Lic
                 } else {
                     // if nothing left to select close
                     this.close();
-                    this.search.width(10);
+                    this.closeSearch();
                 }
             }
 
